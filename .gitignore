@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Entorno virtual
+.venv/
+venv/
+env/
+
+# Bases de datos SQLite (archivos grandes / datos sensibles)
+*.db
+*.sqlite
+*.sqlite3
+
+# Exportaciones y temporales
+tyasa_analytics/exports/
+*.xlsx
+*.csv
+
+# IDE y OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
+
+# Datos crudos (carpetas fuente)
+BRONCE/
+SILVER/
+GOLD/
+PROMT.txt
