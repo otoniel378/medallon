@@ -165,7 +165,7 @@ if not df_mg.empty and "PRODUCTO_LIMPIO" in df_mg.columns:
         yaxis=dict(title="Toneladas", gridcolor="#E5E7EB"),
         title=dict(font=dict(size=14, color=COLORS["primary"]), x=0),
     )
-    st.plotly_chart(fig_stk, width="stretch")
+    st.plotly_chart(fig_stk, use_container_width=True)
 
     # Tabla resumen de participación
     df_part_res = df_mg.groupby("PRODUCTO_LIMPIO", as_index=False)["PESO_TON"].sum().sort_values("PESO_TON", ascending=False)
@@ -287,7 +287,7 @@ if not df_vl.empty and "CALIBRE" in df_vl.columns and "PROCESO" in df_vl.columns
                     yaxis=dict(gridcolor="#E5E7EB", title="Calibre (mm)"),
                     height=360,
                 )
-                st.plotly_chart(fig_box, width="stretch")
+                st.plotly_chart(fig_box, use_container_width=True)
 
             # Grafico B: Toneladas por rango de calibre y proceso
             with col_g2:
@@ -315,7 +315,7 @@ if not df_vl.empty and "CALIBRE" in df_vl.columns and "PROCESO" in df_vl.columns
                     yaxis=dict(gridcolor="#E5E7EB"),
                     height=360,
                 )
-                st.plotly_chart(fig_cal, width="stretch")
+                st.plotly_chart(fig_cal, use_container_width=True)
 
             st.divider()
 
@@ -357,7 +357,7 @@ if not df_vl.empty and "CALIBRE" in df_vl.columns and "PROCESO" in df_vl.columns
                     title=dict(text="Top 15: Proceso + Calibre",
                                font=dict(size=13, color=COLORS["primary"]), x=0),
                 )
-                st.plotly_chart(fig_tc, width="stretch")
+                st.plotly_chart(fig_tc, use_container_width=True)
             with col_c2:
                 tabla_ejecutiva(
                     df_combo_c[["PROCESO", "CALIBRE", "PESO_TON"]],
@@ -409,7 +409,7 @@ if not df_vl.empty and "CALIBRE" in df_vl.columns and "PROCESO" in df_vl.columns
                         height=max(420, len(df_c3) * 26 + 80),
                         title=dict(font=dict(size=13, color=COLORS["primary"]), x=0),
                     )
-                    st.plotly_chart(fig_c3, width="stretch")
+                    st.plotly_chart(fig_c3, use_container_width=True)
                 with col_d2:
                     tabla_ejecutiva(
                         df_c3[["RANK", "PROCESO", "CALIBRE", "ANCHO", "PESO_TON"]],
@@ -439,7 +439,7 @@ if not df_cooc.empty:
         titulo="Co-ocurrencia de productos (n clientes)",
         x_label="Producto", y_label="Producto", fmt=".0f",
     )
-    st.plotly_chart(fig_cooc, width="stretch")
+    st.plotly_chart(fig_cooc, use_container_width=True)
 
 seccion_titulo("Pares Frecuentes", f"Productos comprados juntos por >= {min_clientes_combo} clientes")
 df_combos = combinaciones_frecuentes(df_cp_cooc, min_clientes=min_clientes_combo)

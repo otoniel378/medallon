@@ -45,7 +45,14 @@ def _preparar_serie(df, col_periodo="PERIODO", col_val="PESO_TON") -> pd.DataFra
     s.columns = ["ds", "y"]
     s["ds"] = pd.to_datetime(s["ds"])
     s["y"]  = pd.to_numeric(s["y"], errors="coerce").fillna(0).clip(lower=0)
-    return s.dropna(subset=["ds"]).sort_values("ds").reset_index(drop=True)
+    s = s.dropna(subset=["ds"]).sort_values("ds").reset_index(drop=True)
+    # Eliminar el mes actual si está incompleto (mes corriente aún no ha terminado)
+    if not s.empty:
+        today = pd.Timestamp.now()
+        current_month_start = today.to_period("M").to_timestamp()
+        if s["ds"].max() >= current_month_start:
+            s = s[s["ds"] < current_month_start].reset_index(drop=True)
+    return s
 
 
 def _build_hist_fc(serie, fc_values, lower, upper) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -138,11 +145,14 @@ def _forecast_ets(serie: pd.DataFrame, horizonte: int) -> ForecastResult:
 # ═══════════════════════════════════════════════════════════════
 def _forecast_sarima(serie: pd.DataFrame, horizonte: int) -> ForecastResult:
     """
-    SARIMA con selección automática del orden estacional.
-    Se usa diferenciación conservadora para evitar sobre-diferenciación
-    (principal causa de MAPE > 100%).
+    SARIMA entrenado desde SARIMA_FECHA_INICIO en adelante.
+    Captura el regimen actual de demanda (descendente y estabilizado desde 2022).
+    Diferenciacion conservadora para evitar sobre-diferenciacion.
     """
     from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+    # Recortar al regimen actual — solo datos desde 2022 en adelante
+    serie = serie[serie["ds"] >= SARIMA_FECHA_INICIO].reset_index(drop=True)
 
     y = serie["y"].values
     n = len(y)
@@ -405,12 +415,16 @@ def _forecast_naive(serie: pd.DataFrame, horizonte: int) -> ForecastResult:
 # Punto de entrada principal
 # ═══════════════════════════════════════════════════════════════
 MODELOS_DISPONIBLES = {
-    "auto":   "Automático (mejor MAPE en backtesting)",
+    "sarima": "SARIMA (recomendado)",
+    "auto":   "Automatico (mejor MAPE en backtesting)",
     "ets":    "Holt-Winters ETS",
-    "sarima": "SARIMA",
     "xgb":    "XGBoost (ML)",
     "naive":  "Naive Estacional",
 }
+
+# Fecha de inicio del regimen actual de demanda (descendente y estabilizado)
+# Solo SARIMA usa este recorte para capturar el comportamiento reciente
+SARIMA_FECHA_INICIO = "2022-01-01"
 
 
 def generar_forecast(

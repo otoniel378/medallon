@@ -136,7 +136,7 @@ if not df_abc.empty:
         margin=dict(b=140, l=40, r=80, t=50),
         xaxis=dict(tickfont=dict(size=8), tickangle=-50),
     )
-    st.plotly_chart(fig_pareto, width="stretch")
+    st.plotly_chart(fig_pareto, use_container_width=True)
 
 st.divider()
 
@@ -150,7 +150,7 @@ col_a, col_b = st.columns([1, 2])
 with col_a:
     if not df_resumen_abc.empty:
         fig_donut = donut(df_resumen_abc, names="CLASE", values="PESO_TON", titulo="Volumen por clase")
-        st.plotly_chart(fig_donut, width="stretch")
+        st.plotly_chart(fig_donut, use_container_width=True)
         tabla_ejecutiva(
             df_resumen_abc,
             col_formatos={"PESO_TON": "{:,.1f}", "PCT_VOLUMEN": "{:.1f}%"},
@@ -192,7 +192,7 @@ if not df_div.empty:
             titulo=f"Top {top_div} clientes mas diversificados",
             x_label="N de productos",
         )
-        st.plotly_chart(fig_div, width="stretch")
+        st.plotly_chart(fig_div, use_container_width=True)
 
     with col_d:
         seccion_titulo("Clientes Monoproducto", "Solo compran un tipo")
@@ -254,4 +254,4 @@ if not df_cp.empty and "PRODUCTO_LIMPIO" in df_cp.columns:
         yaxis=dict(title="", tickfont=dict(size=9)),
         title=dict(font=dict(size=14, color=COLORS["primary"]), x=0),
     )
-    st.plotly_chart(fig_stack, width="stretch")
+    st.plotly_chart(fig_stack, use_container_width=True)

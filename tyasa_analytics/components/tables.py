@@ -52,7 +52,7 @@ def tabla_ejecutiva(
     st.dataframe(
         df_display,
         height=height,
-        width="stretch",
+        use_container_width=True,
         hide_index=True,
     )
 
@@ -106,7 +106,7 @@ def tabla_clasificacion_abc(df_abc: pd.DataFrame, key: str = "abc") -> None:
     st.dataframe(
         df_display,
         height=420,
-        width="stretch",
+        use_container_width=True,
         hide_index=True,
     )
     _boton_descarga(df_abc, key=key, label="⬇ Exportar clasificación ABC")

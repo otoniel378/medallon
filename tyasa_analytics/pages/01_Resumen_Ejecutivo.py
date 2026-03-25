@@ -126,7 +126,7 @@ else:
         y_label="Toneladas",
         show_area=True,
     )
-    st.plotly_chart(fig_linea, width="stretch")
+    st.plotly_chart(fig_linea, use_container_width=True)
 
 # ---------------------------------------------------------------------------
 # Sección 2 — Participación por producto y Heatmap
@@ -143,14 +143,14 @@ with col_a:
             values="PESO_TON",
             titulo="Treemap — Toneladas por producto",
         )
-        st.plotly_chart(fig_treemap, width="stretch")
+        st.plotly_chart(fig_treemap, use_container_width=True)
 
 with col_b:
     seccion_titulo("Mix Donut", "")
     if not df_part.empty:
         top_prod_donut = df_part.head(8)
         fig_donut = donut(top_prod_donut, names="PRODUCTO_LIMPIO", values="PESO_TON", titulo="")
-        st.plotly_chart(fig_donut, width="stretch")
+        st.plotly_chart(fig_donut, use_container_width=True)
 
 # ---------------------------------------------------------------------------
 # Sección 3 — Heatmap Mes × Año
@@ -161,7 +161,7 @@ if not df_mensual_f.empty and "ANIO" in preparar_serie_mensual(df_mensual_f).col
     pivot = construir_heatmap_mes_anio(preparar_serie_mensual(df_mensual_f))
     if not pivot.empty:
         fig_heat = heatmap(pivot, titulo="Toneladas por Mes y Año", x_label="Año", y_label="Mes")
-        st.plotly_chart(fig_heat, width="stretch")
+        st.plotly_chart(fig_heat, use_container_width=True)
 
 # ---------------------------------------------------------------------------
 # Sección 4 — Top 10 Clientes y Top 10 Productos
@@ -179,7 +179,7 @@ with col_c:
             titulo="",
             x_label="Toneladas",
         )
-        st.plotly_chart(fig_cli, width="stretch")
+        st.plotly_chart(fig_cli, use_container_width=True)
 
 with col_d:
     seccion_titulo("Top 10 Productos", "Por volumen de toneladas")
@@ -192,7 +192,7 @@ with col_d:
             titulo="",
             x_label="Toneladas",
         )
-        st.plotly_chart(fig_prod, width="stretch")
+        st.plotly_chart(fig_prod, use_container_width=True)
 
 # ---------------------------------------------------------------------------
 # Sección 5 — Tabla resumen exportable

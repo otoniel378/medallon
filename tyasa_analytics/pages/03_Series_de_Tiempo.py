@@ -111,7 +111,7 @@ if not serie_var.empty:
         serie_var, x="PERIODO", y="PESO_TON",
         titulo="Demanda mensual total", y_label="Toneladas", show_area=True,
     )
-    st.plotly_chart(fig_serie, width="stretch")
+    st.plotly_chart(fig_serie, use_container_width=True)
 else:
     st.warning("Sin datos para el periodo seleccionado.")
 
@@ -140,7 +140,7 @@ if not serie_var.empty and "VAR_MOM_PCT" in serie_var.columns:
         xaxis=dict(showgrid=False), yaxis=dict(title="Variacion (%)", gridcolor="#E5E7EB"),
         showlegend=False, height=280,
     )
-    st.plotly_chart(fig_var, width="stretch")
+    st.plotly_chart(fig_var, use_container_width=True)
 
 # Top 10 más afectados (usando el mismo rango de años filtrado)
 st.markdown(
@@ -265,7 +265,7 @@ if not df_gran_clean.empty and prods_sel:
         yaxis=dict(gridcolor="#E5E7EB", title="Toneladas"),
         title=dict(font=dict(size=14, color=COLORS["primary"]), x=0),
     )
-    st.plotly_chart(fig_tend, width="stretch")
+    st.plotly_chart(fig_tend, use_container_width=True)
 elif not prods_sel:
     st.info("Selecciona al menos un producto en el filtro de arriba.")
 
@@ -332,7 +332,7 @@ if not df_gran_clean.empty and "PRODUCTO_LIMPIO" in df_gran_clean.columns:
                 font=dict(size=13, color=COLORS["primary"]), x=0,
             ),
         )
-        st.plotly_chart(fig_vol, width="stretch")
+        st.plotly_chart(fig_vol, use_container_width=True)
 
         st.caption("CV calculado sobre la serie mensual historica de cada producto.")
         tabla_ejecutiva(

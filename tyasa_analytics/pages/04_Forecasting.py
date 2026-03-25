@@ -42,9 +42,10 @@ horizonte = st.sidebar.slider(
 )
 
 modelo_key = st.sidebar.selectbox(
-    "Modelo de pronóstico",
+    "Modelo de pronostico",
     options=list(MODELOS_DISPONIBLES.keys()),
     format_func=lambda k: MODELOS_DISPONIBLES[k],
+    index=0,   # sarima es el primero y el default
     key="fc_modelo",
 )
 
@@ -52,12 +53,12 @@ st.sidebar.markdown("---")
 st.sidebar.markdown(
     f"""
     <div style='font-size:0.78rem;color:{COLORS["text_light"]};'>
-    <b>Guía de modelos</b><br><br>
-    🔵 <b>ETS</b> — Holt-Winters. Ideal para demanda estable con estacionalidad anual.<br><br>
-    📈 <b>SARIMA</b> — Clásico estadístico. Bueno cuando hay tendencia clara.<br><br>
-    🤖 <b>XGBoost</b> — Machine Learning con rezagos. Captura patrones no lineales.<br><br>
-    📌 <b>Naive</b> — Baseline: igual al mismo mes del año pasado. Simple y robusto.<br><br>
-    ✨ <b>Auto</b> — Prueba los 4 y elige el de menor MAPE en backtesting.
+    <b>Guia de modelos</b><br><br>
+    ETS — Holt-Winters. Ideal para demanda estable con estacionalidad anual.<br><br>
+    SARIMA — Clasico estadistico. Bueno cuando hay tendencia clara.<br><br>
+    XGBoost — Machine Learning con rezagos. Captura patrones no lineales.<br><br>
+    Naive — Baseline: igual al mismo mes del anio pasado. Simple y robusto.<br><br>
+    Auto — Prueba los 4 y elige el de menor MAPE en backtesting.
     </div>
     """,
     unsafe_allow_html=True,
@@ -66,7 +67,7 @@ st.sidebar.markdown(
 # ─────────────────────────────────────────────
 # Carga de datos
 # ─────────────────────────────────────────────
-with st.spinner("Cargando datos…"):
+with st.spinner("Cargando datos..."):
     df_total   = load_gold_demanda_mensual_total()
     df_mensual = load_gold_demanda_mensual()
     df_proceso = load_serie_mensual_proceso()
@@ -76,9 +77,9 @@ with st.spinner("Cargando datos…"):
 # ─────────────────────────────────────────────
 st.markdown(
     f"""
-    <h2 style='color:{COLORS["primary"]};margin-bottom:0;'>🔮 Forecasting de Demanda</h2>
+    <h2 style='color:{COLORS["primary"]};margin-bottom:0;'>Forecasting de Demanda</h2>
     <p style='color:{COLORS["text_light"]};'>
-        Modelo: <b>{MODELOS_DISPONIBLES[modelo_key]}</b> &nbsp;·&nbsp; Horizonte: <b>{horizonte} meses</b>
+        Modelo: <b>{MODELOS_DISPONIBLES[modelo_key]}</b> &nbsp;&middot;&nbsp; Horizonte: <b>{horizonte} meses</b>
     </p>
     """,
     unsafe_allow_html=True,
@@ -87,13 +88,13 @@ st.divider()
 
 
 # ─────────────────────────────────────────────
-# Helpers de visualización
+# Helpers de visualizacion
 # ─────────────────────────────────────────────
 def _colores_modelo(nombre: str) -> str:
     if "ETS" in nombre or "Holt" in nombre:
         return COLORS["success"]
     if "XGB" in nombre:
-        return COLOR_SEQUENCE[1]   # naranja
+        return COLOR_SEQUENCE[1]
     if "SARIMA" in nombre or "ARIMA" in nombre:
         return COLORS["secondary"]
     return COLORS["neutral"]
@@ -108,7 +109,6 @@ def _grafico_forecast(resultado, titulo="") -> go.Figure:
     fc_fut = fc_df[fc_df["ds"] > hist_df["ds"].max()].copy()
     color_fc = _colores_modelo(resultado.modelo)
 
-    # Banda de confianza
     if not fc_fut.empty and fc_fut["yhat_upper"].notna().any():
         band = fc_fut.dropna(subset=["yhat_upper", "yhat_lower"])
         if not band.empty:
@@ -116,30 +116,27 @@ def _grafico_forecast(resultado, titulo="") -> go.Figure:
                 x=pd.concat([band["ds"], band["ds"].iloc[::-1]]),
                 y=pd.concat([band["yhat_upper"], band["yhat_lower"].iloc[::-1]]),
                 fill="toself",
-                fillcolor=f"rgba(74,123,167,0.15)",
+                fillcolor="rgba(74,123,167,0.15)",
                 line=dict(color="rgba(0,0,0,0)"),
                 name="Banda 90%", hoverinfo="skip",
             ))
 
-    # Histórico
     fig.add_trace(go.Scatter(
         x=hist_df["ds"], y=hist_df["y"],
-        name="Histórico",
+        name="Historico",
         line=dict(color=COLORS["primary"], width=2.5),
         hovertemplate="%{x|%b %Y}<br>Real: %{y:,.1f} ton<extra></extra>",
     ))
 
-    # Forecast futuro
     if not fc_fut.empty:
         fig.add_trace(go.Scatter(
             x=fc_fut["ds"], y=fc_fut["yhat"],
-            name=f"Pronóstico ({horizonte}m)",
+            name=f"Pronostico ({horizonte}m)",
             line=dict(color=color_fc, width=2.5, dash="dot"),
             mode="lines+markers", marker=dict(size=7),
-            hovertemplate="%{x|%b %Y}<br>Pronóstico: %{y:,.1f} ton<extra></extra>",
+            hovertemplate="%{x|%b %Y}<br>Pronostico: %{y:,.1f} ton<extra></extra>",
         ))
 
-    # Línea "Hoy"
     corte = str(hist_df["ds"].max())
     fig.add_shape(type="line", x0=corte, x1=corte, y0=0, y1=1,
                   xref="x", yref="paper",
@@ -177,7 +174,7 @@ def _tabla_futuro(resultado) -> pd.DataFrame:
 
 
 def _render_resultado(res, key_prefix: str):
-    """Renderiza modelo, métricas, gráfico, tabla y backtesting."""
+    """Renderiza modelo, metricas, grafico, tabla y backtesting."""
     if res.error_msg:
         st.error(f"Error: {res.error_msg}")
         return
@@ -195,26 +192,33 @@ def _render_resultado(res, key_prefix: str):
             unsafe_allow_html=True,
         )
     with col_mt:
+        mape = res.metricas.get("MAPE (%)", float("nan")) if res.metricas else float("nan")
+        mape_txt = f"{mape:.1f}%" if not np.isnan(mape) else "N/A"
+        if not np.isnan(mape):
+            if mape > 50:
+                nivel = "alto"
+                color_mape = COLORS.get("danger", "#C0392B")
+            elif mape > 30:
+                nivel = "moderado"
+                color_mape = COLORS.get("warning", "#D4A017")
+            else:
+                nivel = "aceptable"
+                color_mape = COLORS.get("success", "#2D8A5C")
+            st.markdown(
+                f"<div style='background:{color_mape}22;border:1px solid {color_mape}55;"
+                f"border-radius:6px;padding:8px 14px;color:{color_mape};font-weight:600;'>"
+                f"MAPE {nivel}: {mape_txt}</div>",
+                unsafe_allow_html=True,
+            )
         if res.metricas:
-            # Alerta si MAPE > 30%
-            mape = res.metricas.get("MAPE (%)", 0)
-            if mape and not np.isnan(mape):
-                if mape > 50:
-                    st.warning(f"MAPE alto: **{mape:.1f}%** — considera cambiar el modelo o revisar la serie.")
-                elif mape > 30:
-                    st.info(f"MAPE moderado: **{mape:.1f}%**")
-                else:
-                    st.success(f"MAPE aceptable: **{mape:.1f}%**")
-            tabla_metricas(res.metricas, titulo="Métricas de backtesting")
-        else:
-            st.info("Sin métricas (datos insuficientes para backtesting).")
+            tabla_metricas(res.metricas, titulo="Metricas de backtesting")
 
-    fig = _grafico_forecast(res, titulo=f"Histórico + Pronóstico {horizonte} meses")
-    st.plotly_chart(fig, width="stretch")
+    fig = _grafico_forecast(res, titulo=f"Historico + Pronostico {horizonte} meses")
+    st.plotly_chart(fig, use_container_width=True)
 
     df_fut = _tabla_futuro(res)
     if not df_fut.empty:
-        seccion_titulo(f"Valores pronosticados — próximos {horizonte} meses")
+        seccion_titulo(f"Valores pronosticados - proximos {horizonte} meses")
         tabla_ejecutiva(
             df_fut,
             col_formatos={"FORECAST_TON": "{:,.1f}", "LOWER_90": "{:,.1f}", "UPPER_90": "{:,.1f}"},
@@ -224,7 +228,7 @@ def _render_resultado(res, key_prefix: str):
 
     if not res.backtest.empty:
         st.divider()
-        seccion_titulo("Backtesting", "Comparación real vs predicho")
+        seccion_titulo("Backtesting", "Comparacion real vs predicho")
         bt = res.backtest.copy()
         bt["ERROR_ABS"] = (bt["y_real"] - bt["y_pred"]).abs().round(1)
         bt["ERROR_PCT"] = (bt["ERROR_ABS"] / bt["y_real"].replace(0, np.nan) * 100).round(1)
@@ -243,17 +247,32 @@ def _render_resultado(res, key_prefix: str):
             legend=dict(orientation="h", y=-0.25, x=0.5, xanchor="center"),
             barmode="overlay",
         )
-        st.plotly_chart(fig_bt, width="stretch")
+        st.plotly_chart(fig_bt, use_container_width=True)
+
+
+# ─────────────────────────────────────────────
+# Cache de resultados en session_state
+# ─────────────────────────────────────────────
+def _cache_key(prefix: str, modelo: str, horizonte: int, dim: str = "") -> str:
+    return f"fc_{prefix}_{modelo}_{horizonte}_{dim}"
+
+
+def _get_or_compute(cache_key: str, fn):
+    """Retorna resultado cacheado o ejecuta fn() y lo guarda."""
+    if cache_key not in st.session_state:
+        with st.spinner("Calculando pronostico..."):
+            st.session_state[cache_key] = fn()
+    return st.session_state[cache_key]
 
 
 # ─────────────────────────────────────────────
 # TABS
 # ─────────────────────────────────────────────
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Demanda Total",
-    "🔬 Comparar Modelos",
-    "⚙️ Por Proceso",
-    "📦 Por Familia",
+    "Demanda Total",
+    "Comparar Modelos",
+    "Por Proceso",
+    "Por Familia",
 ])
 
 # ══════════════════════════════════════════════
@@ -265,48 +284,46 @@ with tab1:
     if df_total.empty:
         st.warning("Sin datos de demanda total.")
     else:
-        with st.spinner("Calculando pronóstico total…"):
-            res_total = generar_forecast(df_total, horizonte, modelo=modelo_key)
+        ck = _cache_key("total", modelo_key, horizonte)
+        res_total = _get_or_compute(ck, lambda: generar_forecast(df_total, horizonte, modelo=modelo_key))
         _render_resultado(res_total, key_prefix="total")
 
 # ══════════════════════════════════════════════
 # TAB 2 — Comparar los 4 modelos lado a lado
 # ══════════════════════════════════════════════
 with tab2:
-    seccion_titulo("Comparación de Modelos", "Ejecuta los 4 modelos y compara MAPE, MAE y RMSE")
+    seccion_titulo("Comparacion de Modelos", "Ejecuta los 4 modelos y compara MAPE, MAE y RMSE")
 
     if df_total.empty:
         st.warning("Sin datos.")
     else:
-        if st.button("Ejecutar comparación de los 4 modelos", key="btn_comparar"):
+        if st.button("Ejecutar comparacion de los 4 modelos", key="btn_comparar"):
             modelos_eval = ["ets", "sarima", "xgb", "naive"]
             resultados_comp = {}
-            bar = st.progress(0)
+            prog = st.progress(0)
             for i, mk in enumerate(modelos_eval):
-                with st.spinner(f"Calculando {MODELOS_DISPONIBLES[mk]}…"):
-                    resultados_comp[mk] = generar_forecast(df_total, horizonte, modelo=mk)
-                bar.progress((i + 1) / len(modelos_eval))
-            bar.empty()
+                ck_c = _cache_key("comp", mk, horizonte)
+                if ck_c not in st.session_state:
+                    st.session_state[ck_c] = generar_forecast(df_total, horizonte, modelo=mk)
+                resultados_comp[mk] = st.session_state[ck_c]
+                prog.progress((i + 1) / len(modelos_eval))
+            prog.empty()
 
-            # Tabla comparativa de métricas
             rows = []
             for mk, r in resultados_comp.items():
                 if r.error_msg:
-                    rows.append({"Modelo": r.modelo, "MAE": "—", "MAPE (%)": "—", "RMSE": "—", "Estado": "Error"})
+                    rows.append({"Modelo": r.modelo, "MAE": "—", "MAPE": "—", "RMSE": "—"})
                 else:
                     m = r.metricas
                     mape_v = m.get("MAPE (%)", float("nan"))
                     rows.append({
                         "Modelo": MODELOS_DISPONIBLES[mk],
-                        "MAE":     m.get("MAE", "—"),
-                        "MAPE (%)": f"{mape_v:.1f}%" if not np.isnan(mape_v) else "—",
-                        "RMSE":    m.get("RMSE", "—"),
-                        "Estado":  "OK",
+                        "MAE":    m.get("MAE", "—"),
+                        "MAPE":   f"{mape_v:.1f}%" if not np.isnan(mape_v) else "—",
+                        "RMSE":   m.get("RMSE", "—"),
                     })
-            df_comp = pd.DataFrame(rows)
-            st.dataframe(df_comp, hide_index=True, use_container_width=True)
+            st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
-            # Gráfico comparativo de pronósticos futuros
             fig_comp = go.Figure()
             colores_comp = {
                 "ets":    COLORS["success"],
@@ -317,7 +334,7 @@ with tab2:
             hist = resultados_comp["ets"].historico
             if not hist.empty:
                 fig_comp.add_trace(go.Scatter(
-                    x=hist["ds"], y=hist["y"], name="Histórico",
+                    x=hist["ds"], y=hist["y"], name="Historico",
                     line=dict(color=COLORS["primary"], width=2.5),
                     hovertemplate="%{x|%b %Y}: %{y:,.1f} ton<extra></extra>",
                 ))
@@ -340,22 +357,22 @@ with tab2:
                 margin=dict(l=40, r=20, t=50, b=40),
                 xaxis=dict(showgrid=False), yaxis=dict(gridcolor="#E5E7EB", title="Toneladas"),
                 legend=dict(orientation="h", y=-0.22, x=0.5, xanchor="center"),
-                title=dict(text="Comparación de pronósticos — todos los modelos",
+                title=dict(text="Comparacion de pronosticos — todos los modelos",
                            font=dict(size=14, color=COLORS["primary"]), x=0),
                 height=420,
             )
-            st.plotly_chart(fig_comp, width="stretch")
+            st.plotly_chart(fig_comp, use_container_width=True)
         else:
-            st.info("Haz clic en el botón para comparar los 4 modelos en la demanda total.")
+            st.info("Haz clic en el boton para comparar los 4 modelos en la demanda total.")
 
 # ══════════════════════════════════════════════
 # TAB 3 — Por Proceso
 # ══════════════════════════════════════════════
 with tab3:
-    seccion_titulo("Pronóstico por Proceso", f"Modelo: {MODELOS_DISPONIBLES[modelo_key]}")
+    seccion_titulo("Pronostico por Proceso", f"Modelo: {MODELOS_DISPONIBLES[modelo_key]}")
 
     if df_proceso.empty:
-        st.warning("Sin datos de serie por proceso. Verifica que ventas_limpias tenga PROCESO y FECHAEMB.")
+        st.warning("Sin datos de serie por proceso.")
     else:
         procesos = sorted(df_proceso["PROCESO"].dropna().unique().tolist())
         proc_sel = st.selectbox("Proceso:", options=procesos, key="fc_proc")
@@ -366,21 +383,24 @@ with tab3:
             st.caption(f"Serie disponible: **{n_p} meses**")
 
             if n_p < 12:
-                st.warning(f"Solo {n_p} meses disponibles — se requieren mínimo 12.")
+                st.warning(f"Solo {n_p} meses disponibles — se requieren minimo 12.")
             else:
-                with st.spinner(f"Calculando pronóstico — {proc_sel}…"):
-                    res_p = generar_forecast(df_p, horizonte, modelo=modelo_key)
+                ck_p = _cache_key("proc", modelo_key, horizonte, proc_sel)
+                res_p = _get_or_compute(ck_p, lambda: generar_forecast(df_p, horizonte, modelo=modelo_key))
                 _render_resultado(res_p, key_prefix="proc")
 
-        # Resumen de todos los procesos
         st.divider()
         with st.expander("Resumen comparativo de todos los procesos"):
-            if st.button("Calcular pronóstico para todos los procesos", key="btn_all_proc"):
-                res_procs, bar2 = {}, st.progress(0)
+            if st.button("Calcular pronostico para todos los procesos", key="btn_all_proc"):
+                res_procs = {}
+                prog2 = st.progress(0)
                 for i, proc in enumerate(procesos):
                     df_pi = filtrar_por_dimension(df_proceso, "PROCESO", proc)
                     if len(df_pi) >= 12:
-                        r = generar_forecast(df_pi, horizonte, modelo=modelo_key)
+                        ck_pi = _cache_key("proc", modelo_key, horizonte, proc)
+                        if ck_pi not in st.session_state:
+                            st.session_state[ck_pi] = generar_forecast(df_pi, horizonte, modelo=modelo_key)
+                        r = st.session_state[ck_pi]
                         if not r.error_msg:
                             fut = _tabla_futuro(r)
                             if not fut.empty:
@@ -388,25 +408,21 @@ with tab3:
                                     "forecast_total": fut["FORECAST_TON"].sum(),
                                     "mape": r.metricas.get("MAPE (%)", None),
                                 }
-                    bar2.progress((i + 1) / len(procesos))
-                bar2.empty()
+                    prog2.progress((i + 1) / len(procesos))
+                prog2.empty()
 
                 if res_procs:
                     df_rp = pd.DataFrame([
-                        {"PROCESO": k, "FORECAST_TON": v["forecast_total"],
-                         "MAPE (%)": v["mape"]}
+                        {"PROCESO": k, "FORECAST_TON": v["forecast_total"], "MAPE": v["mape"]}
                         for k, v in res_procs.items()
                     ]).sort_values("FORECAST_TON", ascending=True)
 
                     fig_rp = go.Figure(go.Bar(
                         x=df_rp["FORECAST_TON"], y=df_rp["PROCESO"],
                         orientation="h",
-                        marker=dict(
-                            color=df_rp["FORECAST_TON"],
-                            colorscale=[[0, COLORS["accent"]], [1, COLORS["primary"]]],
-                        ),
-                        text=df_rp["FORECAST_TON"].round(0),
-                        textposition="outside",
+                        marker=dict(color=df_rp["FORECAST_TON"],
+                                    colorscale=[[0, COLORS["accent"]], [1, COLORS["primary"]]]),
+                        text=df_rp["FORECAST_TON"].round(0), textposition="outside",
                         hovertemplate="<b>%{y}</b><br>Forecast: %{x:,.1f} ton<extra></extra>",
                     ))
                     fig_rp.update_layout(
@@ -414,18 +430,15 @@ with tab3:
                         font=dict(family="Inter, Arial, sans-serif", color=COLORS["text"]),
                         margin=dict(l=10, r=80, t=50, b=40),
                         xaxis=dict(title=f"Forecast acumulado {horizonte}m (ton)", gridcolor="#E5E7EB"),
-                        yaxis=dict(title=""),
                         showlegend=False,
                         height=max(300, len(df_rp) * 38 + 80),
-                        title=dict(
-                            text=f"Demanda esperada por proceso — próximos {horizonte} meses",
-                            font=dict(size=13, color=COLORS["primary"]), x=0,
-                        ),
+                        title=dict(text=f"Demanda esperada por proceso — proximos {horizonte} meses",
+                                   font=dict(size=13, color=COLORS["primary"]), x=0),
                     )
-                    st.plotly_chart(fig_rp, width="stretch")
+                    st.plotly_chart(fig_rp, use_container_width=True)
                     tabla_ejecutiva(
                         df_rp.sort_values("FORECAST_TON", ascending=False),
-                        col_formatos={"FORECAST_TON": "{:,.1f}", "MAPE (%)": "{:.1f}%"},
+                        col_formatos={"FORECAST_TON": "{:,.1f}", "MAPE": "{:.1f}%"},
                         key="resumen_procs",
                         height=260,
                     )
@@ -434,7 +447,7 @@ with tab3:
 # TAB 4 — Por Familia (Producto)
 # ══════════════════════════════════════════════
 with tab4:
-    seccion_titulo("Pronóstico por Familia de Producto", f"Modelo: {MODELOS_DISPONIBLES[modelo_key]}")
+    seccion_titulo("Pronostico por Familia de Producto", f"Modelo: {MODELOS_DISPONIBLES[modelo_key]}")
 
     excluir_fc = {"OTROS", "OTHER", "N/D", "SIN CLASIFICAR", "S/C"}
 
@@ -453,21 +466,24 @@ with tab4:
             st.caption(f"Serie disponible: **{n_pr} meses**")
 
             if n_pr < 12:
-                st.warning(f"Solo {n_pr} meses — se requieren mínimo 12.")
+                st.warning(f"Solo {n_pr} meses — se requieren minimo 12.")
             else:
-                with st.spinner(f"Calculando pronóstico — {prod_sel}…"):
-                    res_pr = generar_forecast(df_pr, horizonte, modelo=modelo_key)
+                ck_pr = _cache_key("prod", modelo_key, horizonte, prod_sel)
+                res_pr = _get_or_compute(ck_pr, lambda: generar_forecast(df_pr, horizonte, modelo=modelo_key))
                 _render_resultado(res_pr, key_prefix="prod")
 
-        # Resumen de todas las familias
         st.divider()
         with st.expander("Resumen comparativo de todas las familias"):
-            if st.button("Calcular pronóstico para todas las familias", key="btn_all_prod"):
-                res_fams, bar3 = {}, st.progress(0)
+            if st.button("Calcular pronostico para todas las familias", key="btn_all_prod"):
+                res_fams = {}
+                prog3 = st.progress(0)
                 for i, prod in enumerate(prods):
                     df_pri = filtrar_por_dimension(df_mensual, "PRODUCTO_LIMPIO", prod)
                     if len(df_pri) >= 12:
-                        r = generar_forecast(df_pri, horizonte, modelo=modelo_key)
+                        ck_pri = _cache_key("prod", modelo_key, horizonte, prod)
+                        if ck_pri not in st.session_state:
+                            st.session_state[ck_pri] = generar_forecast(df_pri, horizonte, modelo=modelo_key)
+                        r = st.session_state[ck_pri]
                         if not r.error_msg:
                             fut = _tabla_futuro(r)
                             if not fut.empty:
@@ -475,25 +491,22 @@ with tab4:
                                     "forecast_total": fut["FORECAST_TON"].sum(),
                                     "mape": r.metricas.get("MAPE (%)", None),
                                 }
-                    bar3.progress((i + 1) / len(prods))
-                bar3.empty()
+                    prog3.progress((i + 1) / len(prods))
+                prog3.empty()
 
                 if res_fams:
                     df_rf = pd.DataFrame([
-                        {"FAMILIA": k, "FORECAST_TON": v["forecast_total"],
-                         "MAPE (%)": v["mape"]}
+                        {"FAMILIA": k, "FORECAST_TON": v["forecast_total"], "MAPE": v["mape"]}
                         for k, v in res_fams.items()
                     ]).sort_values("FORECAST_TON", ascending=True)
 
                     fig_rf = px.bar(
-                        df_rf,
-                        x="FORECAST_TON", y="FAMILIA",
-                        orientation="h",
+                        df_rf, x="FORECAST_TON", y="FAMILIA", orientation="h",
                         color="FORECAST_TON",
                         color_continuous_scale=[[0, COLORS["accent"]], [1, COLORS["primary"]]],
                         text=df_rf["FORECAST_TON"].round(0),
                         labels={"FORECAST_TON": f"Forecast {horizonte}m (ton)", "FAMILIA": ""},
-                        title=f"Demanda esperada por familia — próximos {horizonte} meses",
+                        title=f"Demanda esperada por familia — proximos {horizonte} meses",
                     )
                     fig_rf.update_traces(textposition="outside")
                     fig_rf.update_layout(
@@ -505,10 +518,10 @@ with tab4:
                         height=max(300, len(df_rf) * 38 + 80),
                         title=dict(font=dict(size=13, color=COLORS["primary"]), x=0),
                     )
-                    st.plotly_chart(fig_rf, width="stretch")
+                    st.plotly_chart(fig_rf, use_container_width=True)
                     tabla_ejecutiva(
                         df_rf.sort_values("FORECAST_TON", ascending=False),
-                        col_formatos={"FORECAST_TON": "{:,.1f}", "MAPE (%)": "{:.1f}%"},
+                        col_formatos={"FORECAST_TON": "{:,.1f}", "MAPE": "{:.1f}%"},
                         key="resumen_fams",
                         height=260,
                     )
